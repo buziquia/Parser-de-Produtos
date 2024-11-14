@@ -1,89 +1,87 @@
-# Backend Challenge 20230105
+CRUD REST API - Projeto Laravel
+Este projeto é uma REST API desenvolvida em Laravel, que inclui operações de CRUD (Create, Read, Update, Delete) e funcionalidades adicionais para importar e atualizar dados a partir do Open Food Facts.
 
-## Introdução
+Funcionalidades da API
+GET /: Retorna detalhes da API, como status de conexão com o banco de dados, horário da última execução do cron, tempo online e uso de memória.
+GET /products: Lista todos os produtos na base de dados com paginação.
+GET /products/
+: Retorna os detalhes de um produto específico com base em seu código.
+PUT /products/
+: Atualiza as informações de um produto específico.
+DELETE /products/
+: Altera o status de um produto para "trash" (exclusão lógica).
+Estrutura de Banco de Dados
+A tabela products foi criada com os seguintes campos:
 
-Nesse desafio trabalharemos no desenvolvimento de uma REST API para utilizar os dados do projeto Open Food Facts, que é um banco de dados aberto com informação nutricional de diversos produtos alimentícios.
+id: Identificador único.
+code: Código único do produto.
+name: Nome do produto.
+description: Descrição do produto.
+price: Preço do produto.
+status: Status do produto (active ou trash).
+timestamps: Marcas de tempo de criação e atualização.
+Configuração do Docker
+Este projeto utiliza o Docker com Laravel Sail para facilitar a execução e o desenvolvimento local.
 
-O projeto tem como objetivo dar suporte a equipe de nutricionistas da empresa Fitness Foods LC para que eles possam revisar de maneira rápida a informação nutricional dos alimentos que os usuários publicam pela aplicação móvel.
+Comandos para Iniciar o Projeto
+Subir o ambiente com Docker e Sail:
 
-### Antes de começar
- 
-- O projeto deve utilizar a Linguagem específica na avaliação. Por exempo: Python, R, Scala e entre outras;
-- Considere como deadline da avaliação a partir do início do teste. Caso tenha sido convidado a realizar o teste e não seja possível concluir dentro deste período, avise a pessoa que o convidou para receber instruções sobre o que fazer.
-- Documentar todo o processo de investigação para o desenvolvimento da atividade (README.md no seu repositório); os resultados destas tarefas são tão importantes do que o seu processo de pensamento e decisões à medida que as completa, por isso tente documentar e apresentar os seus hipóteses e decisões na medida do possível.
+bash
+Copiar código
+./vendor/bin/sail up -d
+Instalar as dependências do Composer:
 
-## O projeto
- 
-- Criar um banco de dados MongoDB usando Atlas: https://www.mongodb.com/cloud/atlas ou algum Banco de Dados SQL se não sentir confortável com NoSQL;
-- Criar uma REST API com as melhores práticas de desenvolvimento, Design Patterns, SOLID e DDD.
-- Integrar a API com o banco de dados criado para persistir os dados
-- Recomendável usar Drivers oficiais para integração com o DB
-- Desenvolver Testes Unitários
+bash
+Copiar código
+./vendor/bin/sail composer install
+Rodar as migrações para criar as tabelas:
 
-### Modelo de Dados:
+bash
+Copiar código
+./vendor/bin/sail artisan migrate
+Comandos para Importar Dados do Open Food Facts
+Para atualizar a base de dados com dados do Open Food Facts, um comando de importação pode ser criado. Aqui está um exemplo de como rodar um script de importação:
 
-Para a definição do modelo, consultar o arquivo [products.json](./products.json) que foi exportado do Open Food Facts, um detalhe importante é que temos dois campos personalizados para poder fazer o controle interno do sistema e que deverão ser aplicados em todos os alimentos no momento da importação, os campos são:
+bash
+Copiar código
+./vendor/bin/sail artisan import:products
+Este comando deve ser configurado para buscar os dados do site e fazer a importação para a base de dados, limitando a importação a 100 produtos por arquivo.
 
-- `imported_t`: campo do tipo Date com a dia e hora que foi importado;
-- `status`: campo do tipo Enum com os possíveis valores draft, trash e published;
+Testes Unitários
+O projeto inclui testes unitários para garantir o funcionamento correto da API.
 
-### Sistema do CRON
+Comandos para Rodar os Testes
+bash
+Copiar código
+./vendor/bin/sail artisan test
+Os testes incluem verificações para todos os endpoints principais da API, como listar produtos, buscar por código, atualizar e excluir.
 
-Para prosseguir com o desafio, precisaremos criar na API um sistema de atualização que vai importar os dados para a Base de Dados com a versão mais recente do [Open Food Facts](https://br.openfoodfacts.org/data) uma vez ao día. Adicionar aos arquivos de configuração o melhor horário para executar a importação.
+Estrutura de Código
+app/Models/Product.php: Modelo do produto.
+app/Http/Controllers/ProductController.php: Controlador contendo as operações CRUD.
+routes/api.php: Definições de rotas da API.
+database/migrations/xxxx_xx_xx_create_products_table.php: Migração para a tabela products.
+tests/Feature/ProductApiTest.php: Testes unitários para a API.
+Comandos Úteis
+Limpar cache de configuração:
 
-A lista de arquivos do Open Food, pode ser encontrada em: 
+bash
+Copiar código
+./vendor/bin/sail artisan config:cache
+Gerar uma nova chave de aplicação:
 
-- https://challenges.coode.sh/food/data/json/index.txt
-- https://challenges.coode.sh/food/data/json/data-fields.txt
+bash
+Copiar código
+./vendor/bin/sail artisan key:generate
+Executar o Cron de Atualização
+Adicione um agendamento ao Laravel para rodar o comando de importação uma vez ao dia:
 
-Onde cada linha representa um arquivo que está disponível em https://challenges.coode.sh/food/data/json/{filename}.
-
-É recomendável utilizar uma Collection secundária para controlar os históricos das importações e facilitar a validação durante a execução.
-
-Ter em conta que:
-
-- Todos os produtos deverão ter os campos personalizados `imported_t` e `status`.
-- Limitar a importação a somente 100 produtos de cada arquivo.
-
-### A REST API
-
-Na REST API teremos um CRUD com os seguintes endpoints:
-
- - `GET /`: Detalhes da API, se conexão leitura e escritura com a base de dados está OK, horário da última vez que o CRON foi executado, tempo online e uso de memória.
- - `PUT /products/:code`: Será responsável por receber atualizações do Projeto Web
- - `DELETE /products/:code`: Mudar o status do produto para `trash`
- - `GET /products/:code`: Obter a informação somente de um produto da base de dados
- - `GET /products`: Listar todos os produtos da base de dados, adicionar sistema de paginação para não sobrecarregar o `REQUEST`.
-
-## Extras
-
-- **Diferencial 1** Configuração de um endpoint de busca com Elastic Search ou similares;
-- **Diferencial 2** Configurar Docker no Projeto para facilitar o Deploy da equipe de DevOps;
-- **Diferencial 3** Configurar um sistema de alerta se tem algum falho durante o Sync dos produtos;
-- **Diferencial 4** Descrever a documentação da API utilizando o conceito de Open API 3.0;
-- **Diferencial 5** Escrever Unit Tests para os endpoints  GET e PUT do CRUD;
-- **Diferencial 6** Escrever um esquema de segurança utilizando `API KEY` nos endpoints. Ref: https://learning.postman.com/docs/sending-requests/authorization/#api-key
-
-
-
-## Readme do Repositório
-
-- Deve conter o título do projeto
-- Uma descrição sobre o projeto em frase
-- Deve conter uma lista com linguagem, framework e/ou tecnologias usadas
-- Como instalar e usar o projeto (instruções)
-- Não esqueça o [.gitignore](https://www.toptal.com/developers/gitignore)
-- Se está usando github pessoal, referencie que é um challenge by coodesh:  
-
->  This is a challenge by [Coodesh](https://coodesh.com/)
-
-## Finalização e Instruções para a Apresentação
-
-1. Adicione o link do repositório com a sua solução no teste
-2. Adicione o link da apresentação do seu projeto no README.md.
-3. Verifique se o Readme está bom e faça o commit final em seu repositório;
-4. Envie e aguarde as instruções para seguir. Sucesso e boa sorte. =)
-
-## Suporte
-
-Use a [nossa comunidade](https://discord.gg/rdXbEvjsWu) para tirar dúvidas sobre o processo ou envie uma mensagem diretamente a um especialista no chat da plataforma. 
+php
+Copiar código
+// No arquivo App\Console\Kernel.php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('import:products')->dailyAt('03:00');
+}
+Conclusão
+Este projeto fornece uma API completa com um CRUD de produtos, integração com dados externos e execução em ambiente Docker. Sinta-se à vontade para explorar, modificar e expandir as funcionalidades conforme necessário.
